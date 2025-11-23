@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Produce Management System - Kericho Avocado Farmers</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <header class="app-header">
+    <h1>Produce Management System</h1>
+    <p>Kericho Avocado Farmers Cooperative Society</p>
+    <div id="user-info" class="user-info hidden">
+      <span id="user-email"></span>
+      <span id="user-role"></span>
+      <button id="logout-btn" class="btn btn-secondary">Logout</button>
+    </div>
+  </header>
+
+  <!-- AUTH VIEWS -->
+  <main>
+    <section id="auth-section">
+      <div class="auth-card" id="login-card">
+        <h2>Login</h2>
+        <form id="login-form">
+          <label>
+            Email
+            <input type="email" id="login-email" required />
+          </label>
+          <label>
+            Password
+            <input type="password" id="login-password" required />
+          </label>
+          <button type="submit" class="btn btn-primary">Login</button>
+        </form>
+        <p class="auth-note">
+          Admins can create users & assign roles from the Admin tab after login.
+        </p>
+      </div>
+    </section>
+
+    <!-- MAIN APP (VISIBLE AFTER LOGIN) -->
+    <section id="app-section" class="hidden">
+      <nav class="tabs">
+        <button class="tab-btn active" data-target="inventory-view">Inventory</button>
+        <button class="tab-btn" data-target="analytics-view">Yield Analysis</button>
+        <button class="tab-btn admin-only" data-target="admin-view">Admin</button>
+      </nav>
+
+      <!-- INVENTORY VIEW -->
+      <section id="inventory-view" class="tab-view">
+        <div class="view-header">
+          <h2>Inventory</h2>
+          <div class="actions">
+            <button id="export-inventory-csv" class="btn btn-secondary">
+              Export Inventory CSV
+            </button>
+            <button id="print-inventory" class="btn btn-secondary">
+              Print Inventory
+            </button>
+          </div>
+        </div>
+
+        <div class="grid-2">
+          <!-- Inventory form -->
+          <div class="card">
+            <h3 id="inventory-form-title">Add Harvest Entry</h3>
+            <form id="inventory-form">
+              <input type="hidden" id="produce-id" />
+              <label>
+                Farmer ID
+                <input type="text" id="farmer-id" required />
+              </label>
+              <label>
+                Farmer Name
+                <input type="text" id="farmer-name" required />
+              </label>
+              <label>
+                Variety
+                <input type="text" id="variety" placeholder="Hass, Fuerte..." required />
+              </label>
+              <label>
+                Harvest Date
+                <input type="date" id="harvest-date" required />
+              </label>
+              <label>
+                Weight (kg)
+                <input type="number" id="weight-kg" min="0" step="0.1" required />
+              </label>
+              <label>
+                Grade
+                <select id="grade" required>
+                  <option value="A">A</option>
+                  <option value="B">B</option>
+                  <option value="C">C</option>
+                </select>
+              </label>
+              <label>
+                Inputs Used
+                <textarea
+                  id="inputs-used"
+                  placeholder="Format: name:qty:cost, name2:qty2:cost2"
+                ></textarea>
+                <small>Example: Fertilizer:10:500, Pesticide:2:300</small>
+              </label>
+              <label>
+                Storage Location
+                <input type="text" id="storage-location" placeholder="Warehouse 1" />
+              </label>
+              <label>
+                Status
+                <select id="status" required>
+                  <option value="in_stock">In stock</option>
+                  <option value="sold">Sold</option>
+                  <option value="wasted">Wasted</option>
+                </select>
+              </label>
+              <div class="form-actions">
+                <button type="submit" class="btn btn-primary">Save</button>
+                <button type="button" id="cancel-edit" class="btn btn-link hidden">
+                  Cancel edit
+                </button>
+              </div>
+              <p class="note">
+                Officers can record harvests. Managers/Admins may update or clean data.
+              </p>
+            </form>
+          </div>
+
+          <!-- Inventory table -->
+          <div class="card">
+            <h3>Inventory Records (Realtime)</h3>
+            <div class="table-wrapper">
+              <table id="inventory-table">
+                <thead>
+                  <tr>
+                    <th>Farmer</th>
+                    <th>Variety</th>
+                    <th>Harvest Date</th>
+                    <th>Weight (kg)</th>
+                    <th>Grade</th>
+                    <th>Status</th>
+                    <th>Storage</th>
+                    <th class="admin-col">Actions</th>
+                  </tr>
+                </thead>
+                <tbody id="inventory-tbody">
+                  <!-- Filled by JS -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ANALYTICS VIEW -->
+      <section id="analytics-view" class="tab-view hidden">
+        <div class="view-header">
+          <h2>Yield Analysis</h2>
+          <div class="actions">
+            <button id="export-yield-csv" class="btn btn-secondary">
+              Export Yield Summary CSV
+            </button>
+          </div>
+        </div>
+
+        <div class="card">
+          <h3>Filters</h3>
+          <form id="analysis-filter-form" class="filter-form">
+            <label>
+              From (month)
+              <input type="month" id="from-month" />
+            </label>
+            <label>
+              To (month)
+              <input type="month" id="to-month" />
+            </label>
+            <button type="submit" class="btn btn-primary">Apply</button>
+            <button type="button" id="clear-filters" class="btn btn-link">
+              Clear
+            </button>
+          </form>
+        </div>
+
+        <div class="grid-2">
+          <div class="card">
+            <h3>Yield Over Time</h3>
+            <canvas id="yield-line-chart"></canvas>
+          </div>
+          <div class="card">
+            <h3>Top Performing Farmers</h3>
+            <table id="top-farmers-table">
+              <thead>
+                <tr>
+                  <th>Farmer</th>
+                  <th>Total Weight (kg)</th>
+                </tr>
+              </thead>
+              <tbody></tbody>
+            </table>
+
+            <h3>Top Varieties</h3>
+            <table id="top-varieties-table">
+              <thead>
+                <tr>
+                  <th>Variety</th>
+                  <th>Total Weight (kg)</th>
+                </tr>
+              </thead>
+              <tbody></tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- ADMIN VIEW -->
+      <section id="admin-view" class="tab-view hidden">
+        <div class="view-header">
+          <h2>Admin - User & System Management</h2>
+        </div>
+
+        <div class="card">
+          <h3>Create User (Email/Password)</h3>
+          <p class="note">
+            Only admins should use this. Newly created users are added with the
+            selected role.
+          </p>
+          <form id="admin-create-user-form">
+            <label>
+              Email
+              <input type="email" id="new-user-email" required />
+            </label>
+            <label>
+              Password
+              <input type="password" id="new-user-password" required minlength="6" />
+            </label>
+            <label>
+              Role
+              <select id="new-user-role" required>
+                <option value="officer">Officer</option>
+                <option value="manager">Manager</option>
+                <option value="admin">Admin</option>
+              </select>
+            </label>
+            <button type="submit" class="btn btn-primary">Create User</button>
+          </form>
+        </div>
+
+        <div class="card">
+          <h3>Users & Roles</h3>
+          <p class="note">
+            Changing roles affects permissions enforced in Firestore rules.
+          </p>
+          <div class="table-wrapper">
+            <table id="users-table">
+              <thead>
+                <tr>
+                  <th>Email</th>
+                  <th>Role</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody></tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="card">
+          <h3>Demo Data</h3>
+          <button id="seed-demo-data" class="btn btn-secondary">
+            Seed Demo Inventory & Users
+          </button>
+          <p class="note">
+            Only use on test projects. Not for production data.
+          </p>
+        </div>
+      </section>
+    </section>
+  </main>
+
+  <!-- Toast / notifications -->
+  <div id="toast" class="toast hidden"></div>
+
+  <!-- Firebase SDKs (Modular) -->
+  <script type="module">
+    // NOTE: We only import app.js here. It will import firebaseConfig and Firebase SDKs.
+    import "./js/app.js";
+  </script>
+
+  <!-- Chart.js (for yield charts) -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</body>
+</html>
